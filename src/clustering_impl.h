@@ -66,6 +66,10 @@ public:
     return nzeros == num_edges;
   }
 
+  void full_admm_step(){
+    admm_step();
+  }
+
   void admm_step(){
     // U-update
     U = u_step_solver.solve(X + rho * D.transpose() * (V - Z));
@@ -74,7 +78,7 @@ public:
 
     // V-update
     Eigen::MatrixXd DUZ = DU + Z;
-    V = MatrixRowProx(DUZ, gamma / rho, weights, l1);
+    V = MatrixProx(DUZ, gamma / rho, weights, l1);
     ClustRVizLogger::debug("V = ") << V;
 
     // Z-update
@@ -117,8 +121,12 @@ public:
   }
 
   bool admm_converged(){
-    return (scaled_squared_norm(V - V_old) + scaled_squared_norm(Z - Z_old) < CLUSTRVIZ_EXACT_STOP_PRECISION);
+    return ((V - V_old).squaredNorm() + (Z - Z_old).squaredNorm() < 1e-7);
   }
+
+  void reset_aux(){
+    // No-op for convex clustering since we don't have DLPA auxiliary variables P/Q
+  };
 
   void store_values(){
     if(storage_index >= buffer_size){
